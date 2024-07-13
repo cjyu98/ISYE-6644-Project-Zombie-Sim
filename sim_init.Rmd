@@ -51,35 +51,55 @@ Code pulled from: https://epimodel.github.io/epimodel-training/basics_of_network
 
 Adjusted for an SIR model, added in inter.eff & inter.start for intervention
 
-```{r}
-start <- Sys.time()
-# temporal ergm set up
-n = 500
-nw <- network_initialize(n = n) #n is number of nodes in the network
-nw <- set_vertex_attribute(nw, attrname = "risk", value = rep(0:1, each = 250)) # add risk attribute (essentially mark 2 groups)
+```{r model setup and parameterization}
+# network set up, have two groups for different risks
+n = 500 # number of people
+nw <- network_initialize(n = n) 
+nw <- set_vertex_attribute(nw, attrname = "risk", value = rep(0:1, each = 250)) 
+formation <- ~edges + nodefactor("risk") + nodematch("risk") + concurrent
+#nodefactor: likelihood of node forming an edge
+#nodematch: tendency to for nodes of similar attributes to form an edge
+#concurrent: # having at least "two partners"/two connected nodes at any time, can constraint with degrange()
 
-formation <- ~edges + nodefactor("risk") + nodematch("risk") #set up edges and risk factor for nodes
+# mean degree values (all needs to be tuned/decide on what makes logical sense)
 overall_mean_deg = 0.5
 gr1_mean_deg = 0.75
-perc_in_grp = 0.9
-
-target.stats <- c(overall_mean_deg*n/2, gr1_mean_deg*n/2, perc_in_grp*n/4) #goal of edges, need to decide on mean degree
-coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 20, d.rate = 0.001) # need to work on this
+perc_in_grp = 0.8 # percentage of partnerships that occur from people within same risk group 
+perc_concurrent = 0.1 # percentage of concurrent nodes out of the total
+# write in the same order of formation formula, the concurrent # needs to be tuned
+target.stats <- c(overall_mean_deg*n/2, gr1_mean_deg*n/2, perc_in_grp*n/4, perc_concurrent*n) 
+coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 5)
+# need to adjust duration for when edges dissolve 
+coef.diss
 est <- netest(nw, formation, target.stats, coef.diss) #estimate coefficients of the network
 
+```
+```{r model diagnostics}
+dx <- netdx(est, nsims = 10, nsteps = 1000, ncores = 5,
+            nwstats.formula = ~edges + meandeg + degree(0:4, by = "risk") + concurrent) # we'll see how many have up to 4 degrees, can adjust number
+plot(dx)
+print(dx)
+```
 
-param <- param.net(inf.prob = 0.5, inter.eff = rnorm(1), inter.start = 500, rec.rate = 0.02) #di.rate = 0.001, ds.rate = 0.001, dr.rate = 0.001, a.rate = 0.001 for average mortality
-# https://statnet.org/nme/d4-s3-Demography.html
+https://statnet.org/nme/d4-s3-Demography.html for mortality rate inclusion
+
+
+```{r model simulation}
+start <- Sys.time()
+
+param <- param.net(inf.prob = 0.5, inf.prob.g1 = 0.75,
+                   inter.eff = abs(rnorm(1)), inter.start = abs(rnorm(1, mean = 250, sd = 20)), # cure, distributions to be tuned, rnorms could be negative....
+                   rec.rate = 0.002, rec.rate.g1 = 0.001) # recovery rate with immunity
+
 
 #infection probability, efficacy of intervention, when does it intervene
 
-init <- init.net(i.num = 5, r.num = 10) #how many people are infected/recovered at the start
-control <- control.net(type = "SIR", nsteps = 1000, nsims = 10, ncores = 5) #simulation parameters
+init <- init.net(i.num = 5, r.num = 0) #how many people are infected/recovered at the start
+control <- control.net(type = "SIR", nsteps = 500, nsims = 10, ncores = 5) #simulation parameters
 sim <- netsim(est, param, init, control) #run the sim
 plot(sim)
 end <- Sys.time()
 end - start
+
 ```
-
-
 
