@@ -51,11 +51,11 @@ Code pulled from: https://epimodel.github.io/epimodel-training/basics_of_network
 
 Adjusted for an SIR model, added in inter.eff & inter.start for intervention
 
-```{r model setup and parameterization}
+```{r model setup and parameterization (jake)}
 # network set up, have two groups for different risks
 n = 500 # number of people
 nw <- network_initialize(n = n) 
-nw <- set_vertex_attribute(nw, attrname = "risk", value = rep(0:1, each = 250)) 
+nw <- set_vertex_attribute(nw, attrname = "risk", value = rep(0:1, each = n/2))
 formation <- ~edges + nodefactor("risk") + nodematch("risk") + concurrent
 #nodefactor: likelihood of node forming an edge
 #nodematch: tendency to for nodes of similar attributes to form an edge
@@ -84,20 +84,30 @@ print(dx)
 https://statnet.org/nme/d4-s3-Demography.html for mortality rate inclusion
 
 
-```{r model simulation}
+```{r model simulation (rithikaa)}
 start <- Sys.time()
 
+results <- vector("list", length = 10)
+
+for (i in 1:10){
 param <- param.net(inf.prob = 0.5, inf.prob.g1 = 0.75,
                    inter.eff = abs(rnorm(1)), inter.start = abs(rnorm(1, mean = 250, sd = 20)), # cure, distributions to be tuned, rnorms could be negative....
-                   rec.rate = 0.002, rec.rate.g1 = 0.001) # recovery rate with immunity
+                   rec.rate = 0.001, rec.rate.g1 = 0.001) # recovery rate with immunity
 
 
 #infection probability, efficacy of intervention, when does it intervene
 
 init <- init.net(i.num = 5, r.num = 0) #how many people are infected/recovered at the start
-control <- control.net(type = "SIR", nsteps = 500, nsims = 10, ncores = 5) #simulation parameters
+control <- control.net(type = "SIR", nsteps = 500, nsims = 1, ncores = 5) #simulation parameters
 sim <- netsim(est, param, init, control) #run the sim
-plot(sim)
+df <- as.data.frame(sim, out = "mean")
+
+results[[i]] <- df
+}
+
+#plot(sim)
+#summary(sim, 500)
+
 end <- Sys.time()
 end - start
 
