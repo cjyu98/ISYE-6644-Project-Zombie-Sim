@@ -2,32 +2,20 @@
 title: "ISYE 6644 - Project"
 output: html_notebook
 ---
-Code intended for mostly exploring Epimodel as a package/capabilities
 
-# Original Example
-Initial code pulled from: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5931789/
-from Example 1
-
-```{r init, warning=FALSE, message=FALSE}
+```{r initialization}
 # clear environment
 rm(list=ls())
-
 # libraries
 library(EpiModel)
 ```
 
 
-```{r}
-set.seed(12345)
-#SIS sample model
+# Homogenous Population Model 
 
-nw <- network::network.initialize(n = 1000, directed = FALSE) # n is number of nodes
-nw <- network::set.vertex.attribute(nw, "risk", rep(0:1, each = 500))
-formation <- ~edges + nodefactor("risk") + nodematch("risk") + concurrent
-target.stats <- c(250, 375, 225, 100)
-coef.diss <- dissolution_coefs(dissolution = ~ offset(edges), duration = 80)
-coef.diss
+## Setup
 
+<<<<<<< Updated upstream
 ```
 ```{r}
 est1 <- netest(nw, formation, target.stats, coef.diss)
@@ -72,21 +60,37 @@ coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 5)
 # need to adjust duration for when edges dissolve 
 coef.diss
 est <- netest(nw, formation, target.stats, coef.diss) #estimate coefficients of the network
+=======
+```{r homogenous pop model setup}
+n = 500 # number of people
+nw <- network_initialize(n = n) 
+formation <- ~edges
+target.stats <- 3*n/4
+>>>>>>> Stashed changes
 
+coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 3)
+est <- netest(nw, formation, target.stats, coef.diss) 
 ```
-```{r model diagnostics}
-dx <- netdx(est, nsims = 10, nsteps = 1000, ncores = 5,
-            nwstats.formula = ~edges + meandeg + degree(0:4, by = "risk") + concurrent) # we'll see how many have up to 4 degrees, can adjust number
+## Diagnostics
+```{r homogenous model diagnostics}
+dx <- netdx(est, nsims = 10, nsteps = 100, ncores = 5,
+            nwstats.formula = ~edges + meandeg + degree(0:4))
 plot(dx)
 print(dx)
 ```
 
-https://statnet.org/nme/d4-s3-Demography.html for mortality rate inclusion
+## SI Model
 
+<<<<<<< Updated upstream
 
 ```{r model simulation}
+=======
+```{r si homongenous model sim}
+>>>>>>> Stashed changes
 start <- Sys.time()
+results_SI <- vector("list", length = 3)
 
+<<<<<<< Updated upstream
 param <- param.net(inf.prob = 0.5, inf.prob.g1 = 0.75,
                    inter.eff = abs(rnorm(1)), inter.start = abs(rnorm(1, mean = 250, sd = 20)), # cure, distributions to be tuned, rnorms could be negative....
                    rec.rate = 0.002, rec.rate.g1 = 0.001) # recovery rate with immunity
@@ -98,8 +102,235 @@ init <- init.net(i.num = 5, r.num = 0) #how many people are infected/recovered a
 control <- control.net(type = "SIR", nsteps = 500, nsims = 10, ncores = 5) #simulation parameters
 sim <- netsim(est, param, init, control) #run the sim
 plot(sim)
+=======
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                     inf.prob.g1 = ppois(n/100*0.7,n/100))
+  
+  init <- init.net(i.num = 5)
+  control <- control.net(type = "SI", nsteps = 100, nsims = 2, ncores = 5)
+  sim <- netsim(est, param, init, control) 
+  results_SI[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 30, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+
+>>>>>>> Stashed changes
 end <- Sys.time()
 end - start
-
 ```
 
+## SI Model with Vaccine Intervention
+
+```{r si homogenous model w/ intervention sim}
+start <- Sys.time()
+results_SIV <- vector("list", length = 3)
+
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                     inf.prob.g1 = ppois(n/100*0.7,n/100),
+                     inter.eff = 0.9, 
+                     inter.start = 30)
+  
+  init <- init.net(i.num = 5)
+  control <- control.net(type = "SI", nsteps = 100, nsims = 3, ncores = 5)
+  sim <- netsim(est, param, init, control) 
+  results_SIV[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 30, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected"), 
+       col = c("#5cafe7", "#e77e90"), pch = 16)
+
+end <- Sys.time()
+end - start
+```
+
+
+
+## SIR Model
+
+```{r SIR homogenous model sim}
+start <- Sys.time()
+results_SIR <- vector("list", length = 3)
+
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                    inf.prob.g1 = ppois(n/100*0.7,n/100), 
+                    rec.rate = 0.01, 
+                    rec.rate.g1 = 0.05)
+  
+  init <- init.net(i.num = 5, r.num = 0)
+  control <- control.net(type = "SIR", nsteps = 200, nsims = 3, ncores = 5)
+  sim <- netsim(est, param, init, control) 
+  results_SIR[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num", "r.num"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected", "Recovered"), 
+       col = c("#5cafe7", "#e77e90", "#89da7b"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected", "Recovered"), 
+       col = c("#5cafe7", "#e77e90", "#89da7b"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected", "Recovered"), 
+       col = c("#5cafe7", "#e77e90", "#89da7b"), pch = 16)
+plot(sim, type = "network", col.status = TRUE, at = 200, sims = 1)
+legend("topright", legend = c("Susceptible", "Infected", "Recovered"), 
+       col = c("#5cafe7", "#e77e90", "#89da7b"), pch = 16)
+
+end <- Sys.time()
+end - start
+```
+
+
+
+
+
+
+# Heterogenous Population Model
+
+## Model Setup
+```{r heterogenous pop model setup}
+# clear environment
+rm(list=ls())
+
+n = 500 
+nw_het <- network_initialize(n = n) 
+nw_het <- set_vertex_attribute(nw_het, attrname = "group", value = rep(1:2, each = n/2))
+formation_het <- ~edges + nodematch("group")
+target.stats_het <- c(3*n/4, n/4)
+
+coef.diss_het <- dissolution_coefs(dissolution = ~offset(edges), duration = 3)
+est_het <- netest(nw_het, formation_het, target.stats_het, coef.diss_het) 
+```
+## Diagnostics
+```{r heterogenous model diagnostics}
+dx <- netdx(est_het, nsims = 10, nsteps = 300, ncores = 5,
+            nwstats.formula = ~edges + meandeg + degree(0:4, by = "group"))
+plot(dx)
+print(dx)
+```
+
+
+## SI model
+
+```{r SI heterogenous model sim}
+start <- Sys.time()
+results_SI_het <- vector("list", length = 3)
+
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                     inf.prob.g2 = ppois(n/100*0.7,n/100))
+  
+  init <- init.net(i.num = 2, i.num.g2 = 3)
+  control <- control.net(type = "SI", nsteps = 100, nsims = 3, ncores = 5)
+  sim <- netsim(est_het, param, init, control) 
+  results_SI_het[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num"), legend = TRUE)
+plot(sim, y = c("s.num", "s.num.g2", "i.num", "i.num.g2"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 30, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1, shp.g2 = "square")
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1, shp.g2 = "square")
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+
+
+end <- Sys.time()
+end - start
+```
+
+
+
+## SI Model w/ Vaccine Intervention
+```{r SI heterogenous model w/ intervention}
+start <- Sys.time()
+results_SIV_het <- vector("list", length = 3)
+
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                     inf.prob.g2 = ppois(n/100*0.7,n/100),
+                     inter.eff = 0.9, 
+                     inter.start = 30)
+  
+  init <- init.net(i.num = 2, i.num.g2 = 3)
+  control <- control.net(type = "SI", nsteps = 100, nsims = 3, ncores = 5)
+  sim <- netsim(est_het, param, init, control) 
+  results_SIV_het[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num"), legend = TRUE)
+plot(sim, y = c("s.num", "s.num.g2", "i.num", "i.num.g2"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 30, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1, shp.g2 = "square")
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1, shp.g2 = "square")
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90"), pch = c(16, 15, 16, 15))
+end <- Sys.time()
+end - start
+```
+
+# SIR Model
+
+```{r SIR heterogenous model sim}
+start <- Sys.time()
+results_SIR_het <- vector("list", length = 3)
+
+for (i in 1:3){
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
+                    inf.prob.g2 = ppois(n/100*0.7,n/100), 
+                    rec.rate = 0.05, 
+                    rec.rate.g2 = 0.01)
+  
+  init <- init.net(i.num = 2, i.num.g2 = 3, r.num = 0, r.num.g2 = 0)
+  control <- control.net(type = "SIR", nsteps = 200, nsims = 3, ncores = 5)
+  sim <- netsim(est_het, param, init, control) 
+  results_SIR_het[[i]] <- as.data.frame(sim, out = "mean")
+}
+
+plot(sim, y = c("s.num", "i.num", "r.num"), legend = TRUE)
+plot(sim, y = c("s.num", "s.num.g2", "i.num", "i.num.g2", "r.num", "r.num.g2"), legend = TRUE)
+plot(sim, type = "network", col.status = TRUE, at = 1, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2", "Recovered g1", "Recovered g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90", "#89da7b", "#89da7b"), pch = c(16, 15, 16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 50, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2", "Recovered g1", "Recovered g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90", "#89da7b", "#89da7b"), pch = c(16, 15, 16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2", "Recovered g1", "Recovered g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90", "#89da7b", "#89da7b"), pch = c(16, 15, 16, 15, 16, 15))
+plot(sim, type = "network", col.status = TRUE, at = 200, sims = 1, shp.g2 = "square", legend = TRUE)
+legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1", "Infected g2", "Recovered g1", "Recovered g2"), col = c("#5cafe7", "#5cafe7", "#e77e90", "#e77e90", "#89da7b", "#89da7b"), pch = c(16, 15, 16, 15, 16, 15))
+
+
+end <- Sys.time()
+end - start
+```
