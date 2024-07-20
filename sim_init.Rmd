@@ -13,64 +13,17 @@ library(EpiModel)
 
 # Homogenous Population Model 
 
-## Setup
 
-<<<<<<< Updated upstream
-```
-```{r}
-est1 <- netest(nw, formation, target.stats, coef.diss)
-dx <- netdx(est1, nsims = 10, nsteps = 1000)
-dx
-```
-
-```{r}
-init <- init.net(i.num = 50)
-param <- param.net(inf.prob = 0.1, act.rate = 5, rec.rate = 0.02)
-control <- control.net(type = "SIS", nsteps = 500, nsims = 10, epi.by = "risk")
-sim1 <- netsim(est1, param, init, control)
-```
-
-```{r}
-summary(sim1, 500)
-```
-Code pulled from: https://epimodel.github.io/epimodel-training/basics_of_network_models/sis_basics.html and https://epimodel.github.io/epimodel-training/network_models_with_feedback/vaccine_intervention.html
-
-# Main SIR model
-
-Adjusted for an SIR model, added in inter.eff & inter.start for intervention
-
-```{r model setup and parameterization}
-# network set up, have two groups for different risks
-n = 500 # number of people
-nw <- network_initialize(n = n) 
-nw <- set_vertex_attribute(nw, attrname = "risk", value = rep(0:1, each = 250)) 
-formation <- ~edges + nodefactor("risk") + nodematch("risk") + concurrent
-#nodefactor: likelihood of node forming an edge
-#nodematch: tendency to for nodes of similar attributes to form an edge
-#concurrent: # having at least "two partners"/two connected nodes at any time, can constraint with degrange()
-
-# mean degree values (all needs to be tuned/decide on what makes logical sense)
-overall_mean_deg = 0.5
-gr1_mean_deg = 0.75
-perc_in_grp = 0.8 # percentage of partnerships that occur from people within same risk group 
-perc_concurrent = 0.1 # percentage of concurrent nodes out of the total
-# write in the same order of formation formula, the concurrent # needs to be tuned
-target.stats <- c(overall_mean_deg*n/2, gr1_mean_deg*n/2, perc_in_grp*n/4, perc_concurrent*n) 
-coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 5)
-# need to adjust duration for when edges dissolve 
-coef.diss
-est <- netest(nw, formation, target.stats, coef.diss) #estimate coefficients of the network
-=======
 ```{r homogenous pop model setup}
 n = 500 # number of people
 nw <- network_initialize(n = n) 
 formation <- ~edges
 target.stats <- 3*n/4
->>>>>>> Stashed changes
 
 coef.diss <- dissolution_coefs(dissolution = ~offset(edges), duration = 3)
 est <- netest(nw, formation, target.stats, coef.diss) 
 ```
+
 ## Diagnostics
 ```{r homogenous model diagnostics}
 dx <- netdx(est, nsims = 10, nsteps = 100, ncores = 5,
@@ -81,31 +34,13 @@ print(dx)
 
 ## SI Model
 
-<<<<<<< Updated upstream
-
-```{r model simulation}
-=======
 ```{r si homongenous model sim}
->>>>>>> Stashed changes
+
 start <- Sys.time()
 results_SI <- vector("list", length = 3)
 
-<<<<<<< Updated upstream
-param <- param.net(inf.prob = 0.5, inf.prob.g1 = 0.75,
-                   inter.eff = abs(rnorm(1)), inter.start = abs(rnorm(1, mean = 250, sd = 20)), # cure, distributions to be tuned, rnorms could be negative....
-                   rec.rate = 0.002, rec.rate.g1 = 0.001) # recovery rate with immunity
-
-
-#infection probability, efficacy of intervention, when does it intervene
-
-init <- init.net(i.num = 5, r.num = 0) #how many people are infected/recovered at the start
-control <- control.net(type = "SIR", nsteps = 500, nsims = 10, ncores = 5) #simulation parameters
-sim <- netsim(est, param, init, control) #run the sim
-plot(sim)
-=======
 for (i in 1:3){
-  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
-                     inf.prob.g1 = ppois(n/100*0.7,n/100))
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100))
   
   init <- init.net(i.num = 5)
   control <- control.net(type = "SI", nsteps = 100, nsims = 2, ncores = 5)
@@ -127,7 +62,6 @@ plot(sim, type = "network", col.status = TRUE, at = 100, sims = 1)
 legend("topright", legend = c("Susceptible", "Infected"), 
        col = c("#5cafe7", "#e77e90"), pch = 16)
 
->>>>>>> Stashed changes
 end <- Sys.time()
 end - start
 ```
@@ -139,8 +73,7 @@ start <- Sys.time()
 results_SIV <- vector("list", length = 3)
 
 for (i in 1:3){
-  param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
-                     inf.prob.g1 = ppois(n/100*0.7,n/100),
+  param <- param.net(inf.prob = ppois(n/100*0.4,n/100),
                      inter.eff = 0.9, 
                      inter.start = 30)
   
@@ -178,9 +111,7 @@ results_SIR <- vector("list", length = 3)
 
 for (i in 1:3){
   param <- param.net(inf.prob = ppois(n/100*0.4,n/100), 
-                    inf.prob.g1 = ppois(n/100*0.7,n/100), 
-                    rec.rate = 0.01, 
-                    rec.rate.g1 = 0.05)
+                    rec.rate = 0.01)
   
   init <- init.net(i.num = 5, r.num = 0)
   control <- control.net(type = "SIR", nsteps = 200, nsims = 3, ncores = 5)
@@ -208,9 +139,6 @@ end - start
 
 
 
-
-
-
 # Heterogenous Population Model
 
 ## Model Setup
@@ -227,6 +155,7 @@ target.stats_het <- c(3*n/4, n/4)
 coef.diss_het <- dissolution_coefs(dissolution = ~offset(edges), duration = 3)
 est_het <- netest(nw_het, formation_het, target.stats_het, coef.diss_het) 
 ```
+
 ## Diagnostics
 ```{r heterogenous model diagnostics}
 dx <- netdx(est_het, nsims = 10, nsteps = 300, ncores = 5,
