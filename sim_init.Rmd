@@ -136,6 +136,30 @@ legend("topright", legend = c("Susceptible", "Infected", "Recovered"),
 end <- Sys.time()
 end - start
 ```
+## Data Output
+
+```{r write out data to csvs}
+
+average_results <- function(df_list) {
+
+  # Reduce the list by summing up corresponding elements
+  summed_df <- Reduce("+", df_list)
+  
+  # Divide by the number of data frames to get the average
+  averaged_df <- summed_df / length(df_list)
+  
+  return(averaged_df)
+}
+
+df_SI <- average_results(results_SI)
+df_SIV <- average_results(results_SIV)
+df_SIR <- average_results(results_SIR)
+
+write.csv(df_SI, "SI_homogenous.csv")
+write.csv(df_SIV, "SI_vaccine_homogenous.csv")
+write.csv(df_SIR, "SIR_homogenous.csv")
+
+```
 
 
 
@@ -262,4 +286,28 @@ legend("topright", legend = c("Susceptible g1", "Susceptible g2", "Infected g1",
 
 end <- Sys.time()
 end - start
+```
+## Data Output
+
+```{r write out data to csvs}
+
+average_results <- function(df_list) {
+
+  # Reduce the list by summing up corresponding elements
+  summed_df <- Reduce("+", df_list)
+  
+  # Divide by the number of data frames to get the average
+  averaged_df <- summed_df / length(df_list)
+  
+  return(averaged_df)
+}
+
+df_SI <- average_results(results_SI_het)
+df_SIV <- average_results(results_SIV_het)
+df_SIR <- average_results(results_SIR_het)
+
+write.csv(df_SI, "SI_heterogenous.csv")
+write.csv(df_SIV, "SI_vaccine_heterogenous.csv")
+write.csv(df_SIR, "SIR_heterogeous.csv")
+
 ```
