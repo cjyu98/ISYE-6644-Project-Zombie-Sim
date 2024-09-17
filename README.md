@@ -8,4 +8,4 @@ Using the EpiModel package in R, the goal of the project was to simulate a rapid
 A full breakdown and results are captured in the project pdf.
 
 # Code Overview
-The overall project is captured in a R notebook, in [sim_init.Rmd](main/sim_init.Rmd). 
+The overall project is captured in a R notebook, in [sim_init.Rmd](sim_init.Rmd). 
